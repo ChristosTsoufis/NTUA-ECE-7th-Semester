@@ -1,0 +1,43 @@
+agm-map {
+    height: 400px;
+    width: 550px;
+    // padding: 4px 4px 4px 4px;
+    // margin: auto;
+    // background-color: rgba(255, 255, 255, 0.55);
+    // border-radius: 18px;
+    // box-shadow: 10px 2px 2px rgba(0, 0, 0, 0.3);
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+
+
+.form-map {
+    width: 400px;
+    padding: 10px 10px;
+    margin: auto;
+    background-color: rgba(255, 255, 255, 0.55);
+    border-radius: 8px;
+    box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+    position: fixed;
+    top: 85%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+
+    
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+  }
+
