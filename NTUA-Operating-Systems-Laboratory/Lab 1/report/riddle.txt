@@ -1,0 +1,667 @@
+╔═════════════╗
+║ Challenge 0 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+touch .hello_there
+
+├─── Explanation ────┤
+
+openat(AT_FDCWD, ".hello_there", O_RDONLY) = -1 ENOENT (No such file or directory)
+[From strace ./riddle]
+
+╔═════════════╗
+║ Challenge 1 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+chmod a-w .hello_there
+
+╔═════════════╗
+║ Challenge 2 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+sudo kill -SIGCONT <PID of ./riddle>
+
+├─── Explanation ────┤
+
+rt_sigaction(SIGCONT, {sa_handler=0x564ea3f27d40, sa_mask=[CONT], sa_flags=SA_RESTORER|SA_RESTART, sa_restorer=0x7fe4b0eba210}, {sa_handler=SIG_DFL, sa_mask=[], sa_flags=0}, 8) = 0
+[From strace ./riddle output, we boserve that a SIGCONT handler is installed]
+
+╔═════════════╗
+║ Challenge 3 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+export ANSWER=42
+
+├─── Explanation ────┤
+
+getenv("ANSWER") in output of ltrace ./riddle
+42 is obviously the answer to life the universe and everything.
+
+╔═════════════╗
+║ Challenge 4 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+mkfifo magic_mirror
+
+├─── Explanation ────┤
+
+openat(AT_FDCWD, "magic_mirror", O_RDWR) = 4 in strace ./riddle + Title
+
+╔═════════════╗
+║ Challenge 5 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+gcc 5.c -o 5
+./5
+
+├─── Explanation ────┤
+
+fcntl(99, F_GETFD) = -1 EBADF (Bad file descriptor) in strace ./riddle
+
+├─────── Code ───────┤ [ 5.c ]
+
+┌────────────────────────────────────────────────────┐
+│ #include <unistd.h>                                │
+│ #include <fcntl.h>                                 │
+│                                                    │
+│ int main () {                                      │
+│         int fd = open("./file", O_CREAT|O_RDONLY); │
+│         dup2(fd,99);                               │
+│                                                    │
+│         int pid = fork();                          │
+│         if (pid == 0) {                            │
+│                 char* arr[] = {"./riddle", NULL};  │
+│                 execv("./riddle",arr);             │
+│         }                                          │
+│                                                    │
+│         return 0;                                  │
+│ }                                                  │
+└────────────────────────────────────────────────────┘
+
+╔═════════════╗
+║ Challenge 6 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+gcc 6.c -o 6
+./6
+
+├─── Explanation ────┤
+
+[pid  4201] read(33, 0x7ffd387e548c, 4) = -1 EBADF (Bad file descriptor)
+[pid  4200] write(34, "\0\0\0\0", 4)    = -1 EBADF (Bad file descriptor)
+in strace -f ./riddle [1st Try]
+
+[pid  4475] write(54, "\1\0\0\0", 4)    = -1 EBADF (Bad file descriptor)
+[pid  4475] write(54, "\1\0\0\0", 4)    = -1 EBADF (Bad file descriptor)
+in output of strace -f ./6 [2nd Try]
+
+├─────── Code ───────┤ [ 6.c ]
+
+┌───────────────────────────────────────────────────┐
+│ #include <unistd.h>                               │
+│ #include <fcntl.h>                                │
+│                                                   │
+│ int main(int argc, char** argv) {                 │
+│         int fd_1[2];                              │
+│         pipe(fd_1);                               │
+│                                                   │
+│         dup2(fd_1[0],33);                         │
+│         dup2(fd_1[1],34);                         │
+│                                                   │
+│         int fd_2[2];                              │
+│         pipe(fd_2);                               │
+│                                                   │
+│         dup2(fd_2[0],53);                         │
+│         dup2(fd_2[1],54);                         │
+│                                                   │
+│         int pid = fork();                         │
+│         if (pid == 0) {                           │
+│                 char* arr[] = {"./riddle", NULL}; │
+│                 int rslt = execv("./riddle",arr); │
+│         }                                         │
+│         return 0;                                 │
+│ }                                                 │
+└───────────────────────────────────────────────────┘
+
+╔═════════════╗
+║ Challenge 7 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+ln .hello_there .hey_there
+
+├─── Explanation ────┤
+
+If we just execute "touch .hey_there", then we get the following
+strace output:
+lstat(".hello_there", {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+lstat(".hey_there", {st_mode=S_IFREG|0664, st_size=0, ...}) = 0
+write(2, "Oops. 798380 != 789877.\n", 24Oops. 798380 != 789877.
+What is being compared below must be the inodes of the files.
+
+╔═════════════╗
+║ Challenge 8 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+python -c 'print("X"*1073741824)' > bf00
+# (This can be improved using lseek)
+for i in {1..9}; do ln bf00 bf0$i; done
+
+├─── Explanation ────┤
+
+1) Strace ./riddle execution:
+openat(AT_FDCWD, "bf00", O_RDONLY)      = -1 ENOENT (No such file or directory)
+2) After touch bf00:
+openat(AT_FDCWD, "bf00", O_RDONLY)      = 4
+lseek(4, 1073741824, SEEK_SET)          = 1073741824
+read(4, "", 16)                         = 0
+3) After python -c 'print("X"*1073741824)' > bf00:
+openat(AT_FDCWD, "bf01", O_RDONLY)      = -1 ENOENT (No such file or directory)
+4) Make as many hard links as necessary
+
+╔═════════════╗
+║ Challenge 9 ║
+╚═════════════╝
+
+├───── Solution ─────┤
+
+[Terminal 1] nc -l 49842
+[Terminal 2] ./riddle
+[Terminal 1] # Answer the question
+
+├─── Explanation ────┤
+
+connect(4, {sa_family=AF_INET, sin_port=htons(49842), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 ECONNREFUSED (Connection refused)
+in strace ./riddle
+
+╔══════════════╗
+║ Challenge 10 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+[Terminal 1] touch secret_number
+[Terminal 1] ln secret_number secret_number_restore
+[Terminal 1] ./riddle
+[Terminal 2] cat secret_number_restore
+
+├─── Explanation ────┤
+
+From the output of strace ./riddle:
+openat(AT_FDCWD, "secret_number", O_RDWR|O_CREAT|O_TRUNC, 0600) = 4
+unlink("secret_number")                 = 0
+write(4, "The number I am thinking of righ"..., 4096) = 4096
+
+╔══════════════╗
+║ Challenge 11 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+[Terminal 2] touch secret_number
+[Terminal 2] gcc 11.c -o 11
+[Terminal 2] ./11
+[Terminal 3] ps aux | grep ./11 # Find PID of ./11
+[Terminal 3] ls -lai /proc/<PID of ./11>/fd/ # Find FD of secret_number
+[Terminal 1] ./riddle
+[Terminal 3] cp /proc/<PID of ./11>/fd/<FD of secret_number> ./secret_number
+[Terminal 3] cat secret_number
+[Terminal 1] # Input the secret number
+
+├─── Explanation ────┤
+
+Trying the previous solution we get the following:
+You're employing treacherous tricks.\nFAIL
+From strace ./riddle we conclude that the hard link
+count is examined, so we find another workaround:
+We create a process that keeps a file descriptor for
+secret_number open, so that when it gets unlinked and
+closed during ./riddle execution, we still have a soft
+link to the place where the message is written.
+
+├─────── Code ───────┤ [ 11.c ]
+
+┌───────────────────────────────────────────────────┐
+│ #include <fcntl.h>                                │
+│                                                   │
+│ int main() {                                      │
+│         open("secret_number", O_RDONLY);          │
+│         while (1) { }                             │
+│         return 0;                                 │
+│ }                                                 │
+└───────────────────────────────────────────────────┘
+
+╔══════════════╗
+║ Challenge 12 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+[Terminal 1] rm /tmp/riddle-*
+[Terminal 1] ./riddle
+[Terminal 2] python 12.py <character wanted>
+
+
+├─── Explanation ────┤
+
+From strace ./riddle:
+- openat(AT_FDCWD, "/tmp/riddle-LP9tmB", O_RDWR|O_CREAT|O_EXCL, 0600) = 4
+- mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, 4, 0) = 0x7fec532f5000
+- write(2, "I want to find the char 'N' at 0"..., 46I want to find the char 'N' at 0x7fec532f506f) = 46
+The file created is in the format: /tmp/riddle-XXXXXX.
+The offset of the given address (0x7fec532f506f) from the address at which
+the file mapping starts (0x7fec532f5000) is realized to be equal to 6f in
+base 16, or 111 in decimal form.
+
+├─────── Code ───────┤ [ 12.py ]
+
+┌───────────────────────────────────────────────────┐
+│ import sys                                        │
+│ import glob                                       │
+│                                                   │
+│ file_names = glob.glob("/tmp/riddle-*");          │
+│ f = open(file_names[0], "wb");                    │
+│ f.seek(111);                                      │
+│ f.write(sys.argv[1])                              │
+└───────────────────────────────────────────────────┘
+
+╔══════════════╗
+║ Challenge 13 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+[Terminal 1] chmod a+w .hello_there
+[Terminal 1] ./riddle
+[Terminal 2] truncate -s 32768 .hello_there
+[Terminal 1] # Press enter
+
+├─── Explanation ────┤
+
+From strace ./riddle:
+- openat(AT_FDCWD, ".hello_there", O_RDWR|O_CREAT, 0600) = 4
+- ftruncate(4, 32768)                     = 0
+- mmap(NULL, 32768, PROT_READ|PROT_WRITE, MAP_SHARED, 4, 0) = 0x7f4433032000
+- ftruncate(4, 16384)                     = 0
+From mmap man page:
+SIGBUS Attempted access to a portion of the buffer that does not
+       correspond to the file (for example, beyond the end of the
+       file, including the case where another process has truncated
+       the file).
+The read call gives us time to re-truncate the file .hello_there to
+the correct size.
+
+╔══════════════╗
+║ Challenge 14 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+echo 32766 | sudo tee /proc/sys/kernel/ns_last_pid ; ./riddle
+
+╔══════════════╗
+║ Challenge 15 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+gcc -c -fPIC tier2.c -o tier2.o
+gcc tier2.o -shared -o ./tier2.so
+./riddle
+
+├─── Explanation ────┤
+
+1) From ltrace ./riddle:
+   dlopen("./tier2.so", 2)
+2) We create a tier2.c file, initialy empty, and we create from
+   it a shared object named tier2.so
+   From strace ./riddle:
+   dlsym(0x55c52b3c2bd0, "setup_tier2")
+3) We create a "setup_tier2" function and afterwards the shared object
+
+├─────── Code ───────┤ [ tier2.c ]
+
+┌───────────────────────────────────────────────────┐
+│ void setup_tier2 () {}                            │
+└───────────────────────────────────────────────────┘
+
+╔══════════════╗
+║ Challenge 16 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+gcc -c -fPIC tier2.c -o tier2.o
+gcc tier2.o -shared -o ./tier2.so
+./riddle
+
+├─── Explanation ────┤
+
+1) From strace ./riddle:
+   --- SIGSEGV {si_signo=SIGSEGV, si_code=SEGV_MAPERR, si_addr=0x6042000} ---
+   [ The address is also hinted by ./riddle ]
+2) We first create an object file from the 1st try of tier2.c.
+   We get the following message after executing ./riddle:
+   I wanted to find my PID inside a long int at this address. FAIL
+3) We decide to write the PID to .tmp (as seen at the 2nd try of tier2.c)
+
+├─────── Code ───────┤
+
+┌────────────────────────────────────────────┬───────────────────┐
+│ #include <unistd.h>                        │ tier2.c [1st Try] │
+│ #include <fcntl.h>                         └───────────────────┤
+│ #include <sys/mman.h>                                          │
+│                                                                │
+│ void setup_tier2() {                                           │
+│         int * const base = (int *) 0x6042000;                  │
+│         int fd = open(".tmp", O_CREAT|O_RDWR );                │
+│                                                                │
+│         write(fd, "AAAA", sizeof("AAAA"));                     │
+│                                                                │
+│         mmap(base, 4, PROT_READ, MAP_SHARED|MAP_FIXED, fd, 0); │
+│         unlink(".tmp");                                        │
+│ }                                                              │
+└────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────┬───────────────────┐
+│ #include <unistd.h>                        │ tier2.c [2nd Try] │
+│ #include <fcntl.h>                         └───────────────────┤
+│ #include <sys/mman.h>                                          │
+│                                                                │
+│ void setup_tier2() {                                           │
+│         int * const base = (int *) 0x6042000;                  │
+│         int fd = open(".tmp", O_CREAT|O_RDWR );                │
+│                                                                │
+│         long int pid = getpid();                               │
+│         write(fd, &pid, sizeof(pid));                          │
+│                                                                │
+│         mmap(base, 4, PROT_READ, MAP_SHARED|MAP_FIXED, fd, 0); │
+│         unlink(".tmp");                                        │
+│ }                                                              │
+└────────────────────────────────────────────────────────────────┘
+
+╔══════════════╗
+║ Challenge 17 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+Solution 1) Use a custom tier3.so file
+	gcc -c -fPIC tier3.c -o tier3.o
+	gcc tier3.o -shared -o ./tier3.so
+	./riddle
+Solution 2) Modify the existing tier3.so file
+
+├─── Explanation ────┤
+
+----- Solution 1 -----
+
+1) From ltrace ./riddle:
+   dlopen("./tier3.so", 2)                                        = 0x55a99349ebd0
+   dlsym(0x55a99349ebd0, "authorize_tier3")                       = 0x7f8edab147c0
+   We may assume that the return value (if any) of authorize_tier3 is used to
+   decide wether the challenge is completed.
+2) We also observe that setup_tier2() is loaded:
+   dlopen("./tier2.so", 2)                                        = 0x55a99349ebd0
+   dlsym(0x55a99349ebd0, "setup_tier2")                           = 0x7f8edaf38179
+   We make a new tier2.so file, produced from the code below, which loads and
+   calls "authorize_tier3", and then prints the value returned.
+3) We see that a value is returned, and it is equal to one. We produce a tier3.so
+   file from the code below, and realise that the return value 0 suffices to unlock
+   the challenge.
+Our initial assumption is justified upon reviewing the binary code associated with
+the challenge. Said code was spotted using Ghidra, and it is shown below.
+
+----- Solution 2 -----
+
+From objdump -d ./tier3.so we observe under <authorize_tier3@@Base>:
+  833:   0f b6 c0                movzbl %al,%eax
+  836:   c3                      retq
+We know that the return value is stored in %eax. Using vim and :%!xxd
+we edit the file, type :%!xxd -r and then save:
+  833:   33 c0                   xor    %eax,%eax
+  835:   c3                      retq 
+We can obtain the binary code for "xor    %eax,%eax" like so:
+  gcc -c foo.S && objdump -drwC foo.o # where foo.S = "{load} xor %eax, %eax"
+How Vim is used:
+- We open the file with vim tier3.so and then we type :%!xxd
+- :/0f b6c0 # Find the wanted sequence
+  00000830: 83c4 100f b6c0 c300 4883 ec08 4883 c408  ........H...H... ~>
+  00000830: 83c4 1033 c0c3 0000 4883 ec08 4883 c408  ...3....H...H...
+- We close the hex edit by typing :%!xxd -r and then close it with :wq
+
+
+├─────── Code ───────┤
+
+┌──────────────────────────────────────────────────────┬─────────┐
+│ #include <dlfcn.h>                                   │ tier2.c │
+│ #include <stdio.h>                                   └─────────┤
+│ #include <stdint.h>                                            │
+│                                                                │
+│ typedef void* (*arbitrary)();                                  │
+│                                                                │
+│ void setup_tier2()                                             │
+│ {                                                              │
+│     arbitrary my_function;                                     │
+│     void* handle = dlopen("./tier3.so",RTLD_NOW|RTLD_GLOBAL);  │
+│     *(void**)(&my_function) = dlsym(handle,"authorize_tier3"); │
+│                                                                │
+│     unsigned int temp = (uintptr_t) my_function();             │
+│     printf("RESULT OF AUTHORIZE_TIER3 :: %i\n", temp);         │
+│ }                                                              │
+└────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────┬─────────┐
+│ int authorize_tier3() {                              │ tier3.c │
+│     return 0;                                        └─────────┤
+│ }                                                              │
+└────────────────────────────────────────────────────────────────┘
+
+├────── Ghidra ──────┤
+
+┌────────────────────────────────────────────────────────────────┐
+│ 001048ff 48 8d 35        LEA        RSI,[s_authorize_tier3...] │
+│          f7 06 00 00                                           │
+│ 00104906 48 89 c7        MOV        RDI,RAX                    │
+│ 00104909 48 89 c5        MOV        RBP,RAX                    │
+│ 0010490c e8 cf d5        CALL       dlsym                      │
+│          ff ff                                                 │
+│ 00104911 48 85 c0        TEST       RAX,RAX                    │
+│ 00104914 74 0b           JZ         LAB_00104921               │
+└────────────────────────────────────────────────────────────────┘
+
+├───── Comment ──────┤
+
+"Unlock_tier3" seems unusable because it causes a segmentation fault.
+The above approach works better for this case.
+
+╔══════════════╗
+║ Challenge 18 ║
+╚══════════════╝
+
+├───── Solution ─────┤
+
+# Input hte password "deep padufly blue"
+# Optional: Edit the new executable
+
+├─── Explanation ────┤
+
+From pmap <PID of ./riddle>:
+- 0000559a8a2f9000     28K r-x-- riddle
+- 0000559a8a500000      4K r---- riddle
+- 0000559a8a501000      4K rw--- riddle
+From ltrace ./riddle we get:
+- fgets(
+- "\n", 64, 0x7f7c49cf5980)                                = 0x7ffcf952cfb0
+- memcmp(0x559a8a501860, 0x559a8a2fe022, 18, 0)            = 50
+We realise that 0x559a8a2fe022 refers to someplace in ./riddle and more
+specifically, it is located at an offset of 0x5022.
+The value there (the first 18 bytes) does not correspond to a valid string
+of characters, and even by copying the hex code and using it as input with
+the help of python, we observe that the password is not accepted.
+What happens is that the password is "encrypted" using some function in the
+binary, and then it is compared to the precomputed result stored into 0x5022.
+
+By finding the string "What's the password?" using Ghidra, and following the
+closest branches, we soon find a function which seems promising and we
+decompile it, getting the next result:
+
+┌────── Ghidra ──────┐
+├────────────────────┴───────────────────────────────────────────┐
+│ undefined1 * FUN_001037e0(long param_1)                        │
+│ {                                                              │
+│   byte bVar1;                                                  │
+│   long lVar2;                                                  │
+│   byte bVar3;                                                  │
+│                                                                │
+│   lVar2 = 0;                                                   │
+│   bVar3 = 0x6d;                                                │
+│   do {                                                         │
+│     bVar1 = *(byte *)(param_1 + lVar2);                        │
+│     bVar3 = bVar3 ^ bVar1 ^ 1;                                 │
+│     bVar3 = bVar3 >> 1 | bVar3 << 7; //Circular Left Shift     │
+│     (&DAT_00308860)[lVar2] = bVar3;                            │
+│     if (bVar1 == 0) {                                          │
+│       (&DAT_00308860)[(int)lVar2 + 1] = 0;                     │
+│       DAT_0030985f = 0;                                        │
+│       return &DAT_00308860;                                    │
+│     }                                                          │
+│     lVar2 = lVar2 + 1;                                         │
+│   } while (lVar2 != 0xfff);                                    │
+│   DAT_0030985f = 0;                                            │
+│   return &DAT_00308860;                                        │
+│ }                                                              │
+└────────────────────────────────────────────────────────────────┘
+
+Based on this, we construct the reverse function:
+
+┌──── Reverse.c ─────┐
+├────────────────────┴───────────────────────────────────────────┐
+│ #include <stdlib.h>                                            │
+│ #include <stdio.h>                                             │
+│                                                                │
+│ int main () {                                                  │
+│         unsigned char s [] = {0x6D, 0x04, 0x30, 0x2A, 0XAD,    │
+│                               0X46, 0X9B, 0XFD, 0X4C, 0X1C,    │
+│                               0XBD, 0X68, 0X08, 0X94, 0XFB,    │
+│                               0X4B, 0X9F, 0XFD, 0X7E};         │
+│         int i;                                                 │
+│         for (i = 1; i < sizeof(s)/sizeof(char); i++) {         │
+│                 printf("%c",s[i-1]^(s[i] >> 7 | s[i] << 1)^1); │
+│         }                                                      │
+│         printf("\n");                                          │
+│ }                                                              │
+└────────────────────────────────────────────────────────────────┘
+
+where {0x04, 0x30, 0x2A, 0XAD, 0X46, 0X9B, 0XFD, 0X4C, 0X1C,
+0XBD, 0X68, 0X08, 0X94, 0XFB, 0X4B, 0X9F, 0XFD, 0X7E} is the
+hex code of the 18 bytes contained at 0x5022.
+
+We obtain the password: deep padufly blue.
+It is indeed accepted, and ./riddle is overwritten to something else.
+It must be noted that the riddle.savegame file is not updated, and
+from examining a decompile produced from Ghidra, it is obvious that
+no other password can produce a diffrerent result (the only indication
+of a correct password is the absence of the "Wrong" message, but FAIL
+still appears which is odd).
+
+We cannot execute the new ./riddle file, but if we open vim and edit the
+hex code so that "IMP" becomes "ELF":
+00000000: 7f49 4d50 0201 0100 0000 0000 0000 0000  .IMP............ ~>
+00000000: 7f45 4c46 0201 0100 0000 0000 0000 0000  .ELF............
+We obtain a working executable which produces the following output:
+
+
+       ,  .   (          )          -.\ |
+       | / .- |\        /|         _  \'/
+        \'/   | \.-""-./ |          \_) ;-'
+     `'-; (_/ ;   _  _   ;           ) /
+         \ (   \ (.\/.) /    .-.    / |
+          \ \   \ \/\/ /-._.'   \   | |
+           \ \   \ .. /_         \  | |
+            \ \   |  |__)     |\  \ | |
+             \ `"`|==|_       | \  \| |
+              \,-'|==| \      |  \    |
+                   \/   '.    /   `\ /
+                          |   |     `   ,
+                          |   |         )\
+                __.....__/    |        /  \
+              /`              \        `//`
+              |  \`-....-'\    `-.____.'/
+              |  |        /   /`"-----'`
+              |  |        |  |
+              | /         |  |
+       .------' \         /  /
+      (((--------'        \  |
+                           | \
+                           | |
+                           | |
+                           | /
+                          /  )
+                   jgs   /   |
+                        (-(-('
+Are you a Wizard?
+
+After searching the (statically linked) executable by using strace,
+ltrace or even Ghidra, we realise that there is nothing we can do
+with it to change riddle.savegame. Maybe we miss something.
+Anyway, we found the wanted password.
+
+├───── Comment ──────┤
+
+We can produce the final string for the savefile so that the riddle
+is typically completed, but it requires the use of LD_PRELOAD.
+
+┌────── test.c ──────┐
+├────────────────────┴───────────────────────────────────────────┐
+│ #include<stdio.h>                                              │
+│ #include<string.h>                                             │
+│                                                                │
+│ int memcmp (const void* ptr1, const void* ptr2, size_t num) {  │
+│         printf("--> %s <--\n", (char *) ptr2);                 │
+│         return 0;                                              │
+│ }                                                              │
+└────────────────────────────────────────────────────────────────┘
+
+Commands executed:
+gcc -c -fPIC test.c -o test.o
+gcc test.o -shared -o ./test.so
+export LD_PRELOAD=test.so
+
+From ./riddle, the next output is produced:
+
+Challenge  17: 'Tier3 Gate'
+--> B45A84327CB15C555F7D0C080F425B8830099849 <--
+Welcome back challenger. You may pass.
+
+Challenge  18: 'Tier3'
+--> 18D5217A875A39A040D1915C188847E9019E86A5 <--
+Welcome back challenger. You may pass.
+
+From vim riddle.savegame, we realise that the strings
+inbetween "--> <--" are indeed the ones used to store
+our progress. If we append, after the last one saved,
+the string 18D5217A875A39A040D1915C188847E9019E86A5,
+we receive the final message:
+
+┌───────────────────────────────────────────────┐
+│ You are victorious in your quest. Yeah right. │▒
+└───────────────────────────────────────────────┘▒
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
